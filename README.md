@@ -12,3 +12,5 @@ Este repositorio contiene los códigos del brazo robótico RRP diseñado para es
 2. Ejecutar `SerialComCSV.py` 
 3. Seleccionar el patrón de letras que se desea utilizar
 
+IMPORTANTE: para efectos de nuestros servomotores, colocamos el origen en 30°. Esto quiere decir que todos los ángulos de los .csv tienen un offset de 30° agregado para que las trayectorias funcionen correctamente. El origen se tomó como posición horizontal para los links con articulaciones rotacionales, y posición retraída en la cremallera de la articulación prismática.
+
