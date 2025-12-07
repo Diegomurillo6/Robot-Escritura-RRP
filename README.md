@@ -3,9 +3,9 @@
 Este repositorio contiene los códigos del brazo robótico RRP diseñado para escribir letras mediante un sistema de servomotores y comunicación Python–Arduino.
 
 ## Contenido
-- **/python/** – Scripts para envío de trayectorias, procesamiento y comunicación serial.
-- **/arduino/** – Código del microcontrolador (servos, protocolo OK, control).
-- **/Letras/** – Trayectorias generadas (CSV por letra). Para que el python pueda leer las letras, deben estar en una carpeta llamada "Letras", o hacer cambios en el código.
+- Código de python para la lectura, procesamiento y envío serial de los ángulos correspondientes a las trayectorias de las letras
+- Código de Arduino para lectura serial de los ángulos y control de los actuadores del robot
+- .csv de las letras: trayectorias generadas (CSV por letra). Para que el python pueda leer las letras, deben estar en una carpeta llamada "Letras", o hacer cambios en el código.
 
 ## Cómo usar
 1. Cargar `ArduinoRobotV1.ino` al Arduino para poner el robot en posición de arranque y esperar las trayectorias.
