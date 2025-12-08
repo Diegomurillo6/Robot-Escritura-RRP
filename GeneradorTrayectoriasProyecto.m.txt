@@ -1,0 +1,213 @@
+clear;
+clc;
+close all;
+
+% Funciones para cinemática inversa
+theta1 = @(x, y, th2) atan2d(y, x) - atan2d(15*sind(th2), 11+15*cosd(th2));
+theta2 = @(x, y) acosd((x.^2+y.^2-11^2-15^2)/(2*11*15));
+% theta2 = @(x, y) acosd((x.^2+y.^2-15^2-11^2)/(2*15*11));
+d3 = @(z) z;
+
+% Vectores de puntos
+% Comentar y descomentar los vectores deseados, solo dejar uno sin comentar
+% Letra: S
+x = [-3; -3; -1; 1; -3; -1; 1; 1];
+y = [22; 22; 24; 22; 18; 16; 18; 18];
+z = [0; 5; 5; 5; 5; 5; 5; 0];
+
+% Letra: V
+% x = [7; 7; 5; 3; 3];
+% y = [24; 24; 16; 24; 24];
+% z = [0; 5; 5; 5; 0];
+
+% Letra: M
+% x = [3; 3; 4; 5; 6; 7; 7];
+% y = [16; 16; 24; 20; 24; 16; 16];
+% z = [0; 5; 5; 5; 5; 5; 0];
+
+% Letra: A
+% x = [9; 9; 11; 13; 13; 12.1; 12.1; 10; 10];
+% y = [16; 16; 24; 16; 16; 19.6; 19.6; 19.6; 19.6];
+% z = [0; 5; 5; 5; 0; 0; 5; 5; 0];
+
+% Letra: D
+% x = [1; 1; 1; -3; 1; 1];
+% y = [16; 16; 24; 20; 16; 16];
+% z = [0; 5; 5; 5; 5; 0];
+
+% Letra: C
+% x = [9; 9; 13; 9; 9];
+% y = [24; 24; 20; 16; 16];
+% z = [0; 5; 5; 5; 0];
+
+% Letra: Q
+% x = [9; 9; 11; 13; 11; 9; 9; 11; 11; 9; 9];
+% y = [20; 20; 16; 20; 24; 20; 20; 20; 20; 16; 16];
+% z = [0; 5; 5; 5; 5; 5; 0; 0; 5; 5; 0];
+
+% Letra: G
+% x = [11; 11; 13; 11; 9; 11; 11];
+% y = [24; 24; 20; 16; 20; 20; 20];
+% z = [0; 5; 5; 5; 5; 5; 0];
+
+% Se ajustan los puntos porque hubo una mod del espacio
+x = x - 4;
+y = y - 2;
+
+% Cantidad de pasos en la rutina 
+steps = length(x) - 1;
+
+% Para generar el perfil temporal se usan polinomios cúbicos
+% Las velocidades iniciales y finales siempre son 0
+% Tomando Δt = 3s
+a0 = @(vali) vali;  % Valor inicial de la variable (x, y)
+a1 = 0;  % Velocidad inicial 0 para todas
+a2 = @(vali, valf) (1/3) * (valf - vali);
+a3 = @(vali, valf) -(2/27) * (valf - vali);
+
+% Generando el conjunto de funciones para las trayectorias
+xfunct = cell(3,1); % Matriz (cell array) de funciones para x
+yfunct = cell(3,1); % Matriz (cell array) de funciones para y
+zfunct = cell(3, 1); % Cell array para funciones de z
+for n = 1:steps
+    a0v = a0([x(n); y(n); z(n)]); % Devuelve un vector 3x1
+    a2v = a2([x(n); y(n); z(n)], [x(n+1); y(n+1); z(n+1)]);
+    a3v = a3([x(n); y(n); z(n)], [x(n+1); y(n+1); z(n+1)]);
+    % Por alguna razón, el cell array no imprime los valores de los
+    % coeficientes, por lo que se imprimen por separado
+    disp("Coeficientes de x, y y (filas) para el tramo " + n);
+    disp([a0v [0;0;0] a2v a3v]); % a1 siempre vale 0
+    xfunct{n} = @(t) a0v(1) + a2v(1).*(t - (n-1).*3).^2 + a3v(1).*(t - (n-1).*3).^3;
+    yfunct{n} = @(t) a0v(2) + a2v(2).*(t - (n-1).*3).^2 + a3v(2).*(t - (n-1).*3).^3;
+    zfunct{n} = @(t) a0v(3) + a2v(3).*(t - (n-1).*3).^2 + a3v(3).*(t - (n-1).*3).^3;
+    % Como a1 = 0, no se incluye en la función para que no tarde en calculos
+    % innecesarios
+    % (t - (n-1)*3) permite agregar una desplazamiento temportal para el
+    % segundo y tercer tramo (t-3 y t-6 respectivamente)
+    % Se puede evaluar cada segmento con su valor temporal respectivo (1-3,
+    % 3-6, 6-9)
+end
+
+% Matriz de tiempo
+t = [];
+for n = 1:steps
+    t = [t; 3*(n-1):0.2:3*n];
+end
+
+% Vectores de valores cartesianos en el tiempo
+xv = [];
+yv = [];
+zv = [];
+for n=1:steps
+    xv = [xv xfunct{n}(t(n, :))];
+    yv = [yv yfunct{n}(t(n, :))];
+    zv = [zv zfunct{n}(t(n, :))];
+end
+
+% Vectores de los ángulos en el tiempo y d3
+th2 = theta2(xv, yv);
+th1 = theta1(xv, yv, th2);
+dv = d3(zv);
+
+% Gráficas
+% Vector de tiempo para gráficar (una sola fila)
+t_aux = t;
+t = [];
+for n = 1:steps
+    t = [t t_aux(n, :)];
+end
+
+% Componentes cartesianos en el tiempo
+figure(1)
+plot(t, xv, "b", DisplayName='x', LineWidth=2)
+hold on
+plot(t, yv, "g", DisplayName='y', LineWidth=2)
+title("Componentes de posición cartesiana en el tiempo")
+legend()
+xlabel("Tiempo (s)")
+ylabel("Posición (cm)")
+
+% Ángulos
+figure(2)
+plot(t, th1, "b", DisplayName='θ1', LineWidth=2)
+hold on
+plot(t, th2, "g", DisplayName='θ2', LineWidth=2)
+title("Ángulos de articulaciones en el tiempo")
+legend()
+xlabel("Tiempo (s)")
+ylabel("Posición (°)")
+
+% Velocidades
+om1 = gradient(th1, t); % Derivando con respecto a t
+om2 = gradient(th2, t);
+
+figure(3)
+plot(t, om1, "b", DisplayName='ω1', LineWidth=2)
+hold on
+plot(t, om2, "g", DisplayName='ω2', LineWidth=2)
+title("Velocidades angulares de articulaciones en el tiempo")
+legend()
+xlabel("Tiempo (s)")
+ylabel("Velocidad angular (°/s)")
+
+% Aceleraciones
+al1 = gradient(om1, t); % Derivando con respecto a t
+al2 = gradient(om2, t);
+
+figure(4)
+plot(t, al1, "b", DisplayName='α1', LineWidth=2)
+hold on
+plot(t, al2, "g", DisplayName='α2', LineWidth=2)
+title("Aceleraciones angulares de articulaciones en el tiempo")
+legend()
+xlabel("Tiempo (s)")
+ylabel("Aceleración angular (°/s²)")
+
+% Robot de prueba
+
+% Plotting sobre el espacio la pizarra
+figure(5);
+h = rectangle('Position', [-9, 13, 20, 10]);
+h.LineWidth = 2;
+xlim([-45 45])
+ylim([-25 45])
+hold on
+% Plotting sobre el espacio la matriz para las letras
+h1 = rectangle('Position', [-7, 14, 4, 8]);
+h1.LineWidth = 2;
+
+h1 = rectangle('Position', [-1, 14, 4, 8]);
+h1.LineWidth = 2;
+
+h1 = rectangle('Position', [5, 14, 4, 8]);
+h1.LineWidth = 2;
+
+% Robot con SerialLink (sin articulacion Prismatica)
+L1 = Link('a', 11, 'alpha', 0, 'd', 0);
+L1.qlim = [0 pi];
+L2 = Link('a', 15, 'alpha', 0, 'd', 0);
+L2.qlim = [0 deg2rad(270)];
+L3 = Link('prismatic', 'theta', 0, 'a', 0, 'alpha', 0, 'qlim', [0 20]);
+robot = SerialLink([L1 L2 L3], 'name', 'bot');
+q = [deg2rad(th1); deg2rad(th2); dv];
+q = q';
+robot.plot(q)
+
+% Plot de trayectoria
+figure(6)
+plot(xv, yv, LineWidth=2)
+h1 = rectangle('Position', [5, 14, 4, 8]);
+h1.LineWidth = 2;
+h1 = rectangle('Position', [-1, 14, 4, 8]);
+h1.LineWidth = 2;
+h1 = rectangle('Position', [-7, 14, 4, 8]);
+h1.LineWidth = 2;
+h = rectangle('Position', [-9, 13, 20, 10]);
+h.LineWidth = 2;
+title("Trayectoria en el espacio")
+xlabel("x (cm)")
+ylabel("y (cm)")
+
+% Guardando en archvios csv las tablas de puntos
+% Combinando en un solo array para guardar
+file = [t.' th1.' th2.' dv.'];
